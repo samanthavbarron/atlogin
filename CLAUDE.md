@@ -109,7 +109,7 @@ docker run -p 9411:9411 -v ./state:/app/state atlogin
 
 ### Docker Compose
 
-Run with docker-compose:
+Run with Docker Compose:
 ```bash
 # Initialize state directory with a test client
 mkdir -p state
@@ -124,13 +124,13 @@ cat > state/config.json << 'EOF'
 EOF
 
 # Start the atlogin service
-docker-compose up -d
+docker compose up -d
 
 # Start with test app (optional)
-docker-compose --profile test up -d
+docker compose --profile test up -d
 ```
 
-The docker-compose setup includes:
+The Docker Compose setup includes:
 - `atlogin` service on port 9411 with healthcheck
 - `apptest` service on port 8080 (test profile only)
 - Volume mount for state directory
@@ -185,12 +185,12 @@ To run the same tests locally:
 go test ./...
 
 # Run Docker tests
-docker-compose build
+docker compose build
 mkdir -p state
 echo '{"addr":":9411","secrets":{"test-client":"test-secret-12345"}}' > state/config.json
-docker-compose up -d
+docker compose up -d
 curl http://localhost:9411/.well-known/openid-configuration
-docker-compose down
+docker compose down
 ```
 
 ## Testing Notes
