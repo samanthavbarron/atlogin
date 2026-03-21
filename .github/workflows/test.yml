@@ -1,0 +1,89 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test -v ./...
+
+    - name: Build atlogin
+      run: go build -v -o atlogin ./cmd/atlogin
+
+    - name: Build apptest
+      run: go build -v -o apptest ./cmd/apptest
+
+  docker:
+    name: Docker Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker images
+      run: docker-compose build
+
+    - name: Create state directory and initialize
+      run: |
+        mkdir -p state
+
+        # Create a test config with a test client
+        cat > state/config.json << 'EOF'
+        {
+          "addr": ":9411",
+          "client_name": "ATLogin Test",
+          "secrets": {
+            "test-client": "test-secret-12345"
+          }
+        }
+        EOF
+
+    - name: Start services
+      run: docker-compose up -d atlogin
+
+    - name: Wait for atlogin to be healthy
+      run: |
+        timeout 30 sh -c 'until docker-compose ps atlogin | grep -q "healthy"; do sleep 1; done'
+
+    - name: Test OIDC discovery endpoint
+      run: |
+        curl -f http://localhost:9411/.well-known/openid-configuration || exit 1
+
+    - name: Test JWKS endpoint
+      run: |
+        curl -f http://localhost:9411/.well-known/jwks.json || exit 1
+
+    - name: Test WebFinger helper endpoint
+      run: |
+        curl -f 'http://localhost:9411/helpers/webfinger?resource=acct:test@example.com' || exit 1
+
+    - name: Show logs on failure
+      if: failure()
+      run: docker-compose logs
+
+    - name: Stop services
+      if: always()
+      run: docker-compose down

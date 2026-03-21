@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  atlogin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9411:9411"
+    volumes:
+      - ./state:/app/state
+    environment:
+      # Optional: Set these to provide config via environment variables
+      # ATLOGIN_CONFIG: base64-encoded config.json
+      # ATLOGIN_SIGNING_KEY: base64-encoded signing-key.json
+    command: ["/run-app", "-state-dir=/app/state"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9411/.well-known/openid-configuration"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Test app service - optional, for running the standalone test app
+  apptest:
+    build:
+      context: .
+      dockerfile: Dockerfile.apptest
+    ports:
+      - "8080:8080"
+    environment:
+      CLIENT_ID: ${TEST_CLIENT_ID:-test-client}
+      CLIENT_SECRET: ${TEST_CLIENT_SECRET:-test-secret}
+      ISSUER: ${TEST_ISSUER:-http://atlogin:9411}
+    depends_on:
+      atlogin:
+        condition: service_healthy
+    profiles:
+      - test

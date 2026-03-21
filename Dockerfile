@@ -10,9 +10,9 @@ RUN go build -v -o /run-app ./cmd/atlogin
 
 FROM debian:bookworm
 
-# Install CA certificates for HTTPS requests
+# Install CA certificates for HTTPS requests and curl for healthchecks
 RUN apt-get update && \
-    apt-get install -y ca-certificates && \
+    apt-get install -y ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /run-app /
