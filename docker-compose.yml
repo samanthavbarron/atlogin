@@ -9,10 +9,10 @@ services:
       - "9411:9411"
     volumes:
       - ./state:/app/state
-    environment:
-      # Optional: Set these to provide config via environment variables
-      # ATLOGIN_CONFIG: base64-encoded config.json
-      # ATLOGIN_SIGNING_KEY: base64-encoded signing-key.json
+    # Optional environment variables:
+    # environment:
+    #   ATLOGIN_CONFIG: base64-encoded config.json
+    #   ATLOGIN_SIGNING_KEY: base64-encoded signing-key.json
     command: ["/run-app", "-state-dir=/app/state"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9411/.well-known/openid-configuration"]
